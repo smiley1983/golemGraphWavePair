@@ -73,9 +73,8 @@ class GraphWavePair:
                 f.write(str(e))
 
 args = sys.argv[1:]
-print(args)
-with open(F'{GOLEM_WORKDIR}err2.log', 'w') as f:
-    f.write(str(args))
+# with open(F'{GOLEM_WORKDIR}err2.log', 'w') as f:
+#     f.write(str(args))
 if len(args) < 4:
     with open('err.log', 'a') as f:
         f.write("graphWavePair requires 4 arguments. Arguments received: " + str(args))

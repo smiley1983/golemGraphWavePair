@@ -18,17 +18,16 @@ def interpolate(fromVal, toVal, t):
 
 def renderAnimation(ctx=None, tasks=None):
 
-    #subprocess.run(['convert', '-delay 10', '-loop 0', '*.png', 'output.gif'])
-    subprocess.run(['convert', '-loop 0', '*.png', 'output.gif'])
+    subprocess.run(['convert', '-delay', '10', '-loop', '0', '*.png', 'output.gif'])
 
-def write_runscript(scriptname, target_filename, offset, secondFrequency, smoothness):
-    script = F"""
-#!/usr/bin/env sh
-cd /golem/work/
-./graphWavePair.py {target_filename} {offset} {secondFrequency} {smoothness} >> err.log
-"""
-    with open(scriptname, 'w') as f:
-        f.write(script)
+#  def write_runscript(scriptname, target_filename, offset, secondFrequency, smoothness):
+#      script = F"""
+#  #!/usr/bin/env sh
+#  cd /golem/work/
+#  ./graphWavePair.py {target_filename} {offset} {secondFrequency} {smoothness} >> err.log
+#  """
+#      with open(scriptname, 'w') as f:
+#          f.write(script)
 
 async def main(args):
     package = await vm.repo(
@@ -42,33 +41,13 @@ async def main(args):
             (filename, offset, secondFrequency, smoothness) = task.data
             full_filename = filename + ".png"
             # Send these files so we don't have to update the Docker image
-            # write_runscript('run.sh', filename, offset, secondFrequency, smoothness)
-            # ctx.send_file('run.sh', F'{GOLEM_WORKDIR}run.sh')
             ctx.send_file('graphWavePair.py', F'{GOLEM_WORKDIR}graphWavePair.py')
-            # commands = (
-            #     #f'touch {GOLEM_WORKDIR+filename}; ' +
-            #     f'chmod u+x run.sh; chmod u+x graphWavePair.sh' +
-            #     f'{GOLEM_WORKDIR}run.sh {filename} {offset} {secondFrequency} {smoothness}'
-            # )
             ctx.run(F'chmod', 'u+x', F'{GOLEM_WORKDIR}graphWavePair.py')
-            # ctx.run(F'chmod', 'u+x', F'{GOLEM_WORKDIR}run.sh')
-            # ctx.run(F'{GOLEM_WORKDIR}run.sh')
-
-            #ctx.run(F'{GOLEM_WORKDIR}graphWavePair.py', filename, offset, secondFrequency, smoothness)
-
-            #ctx.run(F'{GOLEM_WORKDIR}run.sh', filename, offset, secondFrequency, smoothness)
             ctx.run(F'/bin/sh', '-c', F'{GOLEM_WORKDIR}graphWavePair.py {filename} {offset} {secondFrequency} {smoothness}')
-            #ctx.run(F'/bin/python3', F'{GOLEM_WORKDIR}dummyScript.py', filename, offset, secondFrequency, smoothness)
-            #ctx.run(F'/bin/sh', '-c', '{GOLEM_WORKDIR}run.sh {filename} {offset} {secondFrequency} {smoothness}')
-            # result.check_returncode()
-            #GraphWavePair(filename, offset, secondFrequency, smoothness)
-            # ctx.download_file(f'{GOLEM_WORKDIR}files.log', filename + "-files.log")
-            #ctx.download_file(F'{GOLEM_WORKDIR}err2.log', filename + "-err.log")
             ctx.download_file(f'{GOLEM_WORKDIR+full_filename}', full_filename)
-            # ctx.download_file(f'{GOLEM_WORKDIR}stdout.txt', filename + "-stdout.txt")
-            # ctx.download_file(f'{GOLEM_WORKDIR}stderr.txt', filename + "-stderr.txt")
+
             yield ctx.commit()
-            task.accept_task(result='err2.log')
+            task.accept_task(result=full_filename)
 
 
     # Since we can do the computation OR the rendering on the Golem network,
@@ -95,19 +74,19 @@ async def main(args):
         event_emitter=log_summary(log_event_repr),
     ) as engine:
 
-        # Prepare our parameters for approx. 62 graphs
+        # Prepare our parameters for 62 graphs
         steps = np.arange(0.0, np.pi * 2, 0.1)
         numSteps = len(steps)
         inputs = []
         for (count, step) in enumerate(steps):
             filename = "graph-%04d" % (count,)
-            if (step < np.pi):
-                secondFrequency = 64
-                smoothness = 8192
-            else:
-                distance = (count - numSteps / 2) / (numSteps / 2)
-                secondFrequency = interpolate(64, 1, distance)
-                smoothness = interpolate(8192, 1, distance)
+            #if (step < np.pi):
+            #    secondFrequency = 64
+            #    smoothness = 8192
+            #else:
+            distance = (count - numSteps / 2) / (numSteps / 2)
+            secondFrequency = interpolate(10, 16, distance)
+            smoothness = interpolate(10, 3, distance)
             inputs.append((filename, step, secondFrequency, smoothness))
 
         async for task in engine.map(worker, [Task(data=graphInput) for graphInput in inputs]):

@@ -3,3 +3,6 @@ __*
 *.log
 *.gvmi
 hashlink.txt
+logfiles*
+*.png
+*.gif
