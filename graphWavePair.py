@@ -44,7 +44,6 @@ class GraphWavePair:
 
             ax = plt.axis([0, self.length, -2, 2])
 
-            # Convenient constant for intended inputs
             max_distance = MAX_DISTANCE
 
             # # To scale the distances relative to the max distance on each
@@ -63,6 +62,11 @@ class GraphWavePair:
 
                 plt.plot([t, t], [val1, val2], color=(red, green, 0, 1), lw=0.1)
 
+            plt.xlabel('x')
+            plt.ylabel('y')
+            plt.annotate(xy=[0.2, 1.8], s=F'Offset                   = {offset:01f}')
+            plt.annotate(xy=[0.2, 1.6], s=F'Second frequency = {secondFrequency:01f}')
+            plt.annotate(xy=[0.2, 1.4], s=F'Smoothness          = {smoothness:01f}')
 
             #plt.show()
 

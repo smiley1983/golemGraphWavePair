@@ -13,11 +13,9 @@ from yapapi.runner.ctx import WorkContext
 GOLEM_WORKDIR = '/golem/work/'
 
 def interpolate(fromVal, toVal, t):
-
     return fromVal + ((toVal - fromVal) * t)
 
 def renderAnimation(ctx=None, tasks=None):
-
     subprocess.run(['convert', '-delay', '10', '-loop', '0', '*.png', 'output.gif'])
 
 #  def write_runscript(scriptname, target_filename, offset, secondFrequency, smoothness):
@@ -74,22 +72,23 @@ async def main(args):
         event_emitter=log_summary(log_event_repr),
     ) as engine:
 
-        # Prepare our parameters for 62 graphs
-        steps = np.arange(0.0, np.pi * 2, 0.1)
+        # Prepare our parameters for 125 graphs
+        steps = np.arange(0.0, np.pi * 4, 0.1)
         numSteps = len(steps)
         inputs = []
         for (count, step) in enumerate(steps):
             filename = "graph-%04d" % (count,)
-            #if (step < np.pi):
-            #    secondFrequency = 64
-            #    smoothness = 8192
-            #else:
-            distance = (count - numSteps / 2) / (numSteps / 2)
-            secondFrequency = interpolate(10, 16, distance)
-            smoothness = interpolate(10, 3, distance)
+            if (step < np.pi * 2):
+                distance = (count) / (numSteps / 2)
+                secondFrequency = interpolate(10, 16, distance)
+                smoothness = interpolate(10, 3, distance)
+            else:
+                distance = (count - numSteps / 2) / (numSteps / 2)
+                secondFrequency = interpolate(16, 10, distance)
+                smoothness = interpolate(3, 10, distance)
             inputs.append((filename, step, secondFrequency, smoothness))
 
-        async for task in engine.map(worker, [Task(data=graphInput) for graphInput in inputs]):
+        async for task in engine.map(worker, [Task(data=graphInput) for graphInput in inputs[:4]]):
             print(
                 f"{utils.TEXT_COLOR_CYAN}"
                 f"Task computed: {task}, result: {task.output}"
@@ -106,13 +105,9 @@ async def main(args):
 
 if __name__ == "__main__":
     parser = utils.build_parser("golemGraph")
-
     parser.add_argument("--number-of-providers", dest="number_of_providers", type=int, default=4)
-
     args = parser.parse_args()
-
     enable_default_logger(log_file=args.log_file)
-
     sys.stderr.write(
         f"Using subnet: {utils.TEXT_COLOR_YELLOW}{args.subnet_tag}{utils.TEXT_COLOR_DEFAULT}\n"
     )
@@ -121,10 +116,9 @@ if __name__ == "__main__":
     task = loop.create_task(main(args))
 
     try:
-        # Remove any generated files from previous runs
-        subprocess.run(['rm', '-f', F'*.gif', f'*.png'])
-        # Generate a new set of images
+        # Generate a new set of images on the Golem network
         loop.run_until_complete(task)
+        # Combine them locally
         renderAnimation()
     except (Exception, KeyboardInterrupt) as e:
         print(e)
