@@ -18,14 +18,21 @@ def interpolate(fromVal, toVal, t):
 def renderAnimation(ctx=None, tasks=None):
     subprocess.run(['convert', '-delay', '10', '-loop', '0', '*.png', 'output.gif'])
 
-#  def write_runscript(scriptname, target_filename, offset, secondFrequency, smoothness):
-#      script = F"""
-#  #!/usr/bin/env sh
-#  cd /golem/work/
-#  ./graphWavePair.py {target_filename} {offset} {secondFrequency} {smoothness} >> err.log
-#  """
-#      with open(scriptname, 'w') as f:
-#          f.write(script)
+# Split a list into n lists
+def divideList(l, n):
+    count = len(l)
+    numPerSet = int(count / n)
+    sets = []
+    activeSet = []
+    setCount = 1
+    for (count, item) in enumerate(l):
+        if count > 0 and setCount < n and count % n == 0:
+            setCount += 1
+            sets.append(activeSet)
+            activeSet = []
+        activeSet.append(item)
+    sets.append(activeSet)
+    return sets
 
 async def main(args):
     package = await vm.repo(
@@ -36,16 +43,16 @@ async def main(args):
 
     async def worker(ctx: WorkContext, tasks):
         async for task in tasks:
-            (filename, offset, secondFrequency, smoothness) = task.data
-            full_filename = filename + ".png"
-            # Send these files so we don't have to update the Docker image
-            ctx.send_file('graphWavePair.py', F'{GOLEM_WORKDIR}graphWavePair.py')
-            ctx.run(F'chmod', 'u+x', F'{GOLEM_WORKDIR}graphWavePair.py')
-            ctx.run(F'/bin/sh', '-c', F'{GOLEM_WORKDIR}graphWavePair.py {filename} {offset} {secondFrequency} {smoothness}')
-            ctx.download_file(f'{GOLEM_WORKDIR+full_filename}', full_filename)
+            for (filename, offset, secondFrequency, smoothness) in task.data:
+                full_filename = filename + ".png"
+                # Send these files so we don't have to update the Docker image
+                ctx.send_file('graphWavePair.py', F'{GOLEM_WORKDIR}graphWavePair.py')
+                ctx.run(F'chmod', 'u+x', F'{GOLEM_WORKDIR}graphWavePair.py')
+                ctx.run(F'/bin/sh', '-c', F'{GOLEM_WORKDIR}graphWavePair.py {filename} {offset} {secondFrequency} {smoothness}')
+                ctx.download_file(f'{GOLEM_WORKDIR+full_filename}', full_filename)
 
             yield ctx.commit()
-            task.accept_task(result=full_filename)
+            task.accept_task(result='image set may have been rendered')
 
 
     # Since we can do the computation OR the rendering on the Golem network,
@@ -88,7 +95,9 @@ async def main(args):
                 smoothness = interpolate(3, 10, distance)
             inputs.append((filename, step, secondFrequency, smoothness))
 
-        async for task in engine.map(worker, [Task(data=graphInput) for graphInput in inputs[:4]]):
+        inputGroups = divideList(inputs, args.number_of_providers)
+
+        async for task in engine.map(worker, [Task(data=inputGroup) for inputGroup in inputGroups]):
             print(
                 f"{utils.TEXT_COLOR_CYAN}"
                 f"Task computed: {task}, result: {task.output}"

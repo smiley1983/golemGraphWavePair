@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# This script may be helpful during debugging
 import sys
 GOLEM_WORKDIR = '/golem/work/'
 args = sys.argv[1:]

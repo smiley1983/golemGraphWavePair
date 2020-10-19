@@ -1,7 +1,7 @@
 .*
 __*
 *.log
-*.gvmi
+*gvmi
 hashlink.txt
 logfiles*
 *.png
