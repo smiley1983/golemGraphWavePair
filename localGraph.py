@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# Generate graphs locally
+# Written by Jude Hungerford
 import numpy as np
 import subprocess
 

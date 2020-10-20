@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# Graph the interaction of waves
+# Written by Jude Hungerford
 import matplotlib
 # Without this before import pyplot, matplotlib will try to connect to X Window
 matplotlib.use('Agg')

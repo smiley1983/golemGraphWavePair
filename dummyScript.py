@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-# This script may be helpful during debugging
+# This script may or may not be helpful during debugging
+# Written by Jude Hungerford
 import sys
 GOLEM_WORKDIR = '/golem/work/'
 args = sys.argv[1:]
