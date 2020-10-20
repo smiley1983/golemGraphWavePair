@@ -10,3 +10,5 @@ Generate images using the Golem Network:
 Generate images locally (for testing):
 
     ./localGraph.py
+
+[Video of the script and resulting graph](https://youtu.be/h_MQKBRYTPw)
